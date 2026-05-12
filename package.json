@@ -1,0 +1,28 @@
+{
+  "name": "whatsapp-sender-license-api",
+  "version": "1.0.0",
+  "description": "Excel/VBA + sender.exe tabanli WhatsApp toplu mesaj gonderme uygulamasi icin lisans kontrol API'si.",
+  "main": "api/license/check.js",
+  "scripts": {
+    "check": "node --check api/license/activate.js && node --check api/license/check.js && node --check api/usage/increment.js"
+  },
+  "keywords": [
+    "license-api",
+    "supabase",
+    "vercel",
+    "whatsapp-sender"
+  ],
+  "author": "",
+  "license": "UNLICENSED",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4",
+    "dotenv": "^17.4.2"
+  },
+  "devDependencies": {
+    "vercel": "latest"
+  }
+}
