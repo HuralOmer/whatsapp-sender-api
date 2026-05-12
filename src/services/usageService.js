@@ -94,6 +94,7 @@ async function incrementUsage(body) {
 
     await logEvent(data, license, "USAGE_INCREMENTED", "Günlük kullanım güncellendi.", {
       app_version: data.appVersion,
+      customer_email: data.customerEmail,
       increment_by: data.incrementBy,
       sent_count: usedToday
     });

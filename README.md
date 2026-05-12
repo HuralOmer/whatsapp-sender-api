@@ -96,6 +96,7 @@ Vercel panelinde şu environment variable değerleri eklenmelidir:
 Örnek test lisansı:
 
 - `license_key`: `TEST-1234-ABCD-5678`
+- `customer_email`: `omer@example.com`
 - Plan: `Starter`
 - `max_devices`: `1`
 - `daily_message_limit`: `50`
@@ -105,6 +106,7 @@ Vercel panelinde şu environment variable değerleri eklenmelidir:
 ```json
 {
   "license_key": "TEST-1234-ABCD-5678",
+  "customer_email": "omer@example.com",
   "device_fingerprint": "test-device-001",
   "device_name": "Omer Test PC",
   "app_version": "1.0.0"
@@ -116,6 +118,7 @@ curl -X POST http://localhost:3000/api/license/activate \
   -H "Content-Type: application/json" \
   -d '{
     "license_key": "TEST-1234-ABCD-5678",
+    "customer_email": "omer@example.com",
     "device_fingerprint": "test-device-001",
     "device_name": "Omer Test PC",
     "app_version": "1.0.0"
@@ -131,6 +134,7 @@ Başarılı response:
   "message": "Lisans başarıyla doğrulandı.",
   "license": {
     "license_key": "TEST-1234-ABCD-5678",
+    "customer_email": "omer@example.com",
     "status": "active",
     "expires_at": null
   },
@@ -157,6 +161,7 @@ Başarılı response:
 ```json
 {
   "license_key": "TEST-1234-ABCD-5678",
+  "customer_email": "omer@example.com",
   "device_fingerprint": "test-device-001",
   "device_name": "Omer Test PC",
   "app_version": "1.0.0"
@@ -168,6 +173,7 @@ curl -X POST http://localhost:3000/api/license/check \
   -H "Content-Type: application/json" \
   -d '{
     "license_key": "TEST-1234-ABCD-5678",
+    "customer_email": "omer@example.com",
     "device_fingerprint": "test-device-001",
     "device_name": "Omer Test PC",
     "app_version": "1.0.0"
@@ -183,6 +189,7 @@ Başarılı response:
   "message": "Lisans geçerli.",
   "license": {
     "license_key": "TEST-1234-ABCD-5678",
+    "customer_email": "omer@example.com",
     "status": "active",
     "expires_at": null
   },
@@ -211,6 +218,7 @@ Bu endpoint yalnızca başarılı WhatsApp mesaj gönderiminden sonra çağrılm
 ```json
 {
   "license_key": "TEST-1234-ABCD-5678",
+  "customer_email": "omer@example.com",
   "device_fingerprint": "test-device-001",
   "increment_by": 1,
   "app_version": "1.0.0"
@@ -222,6 +230,7 @@ curl -X POST http://localhost:3000/api/usage/increment \
   -H "Content-Type: application/json" \
   -d '{
     "license_key": "TEST-1234-ABCD-5678",
+    "customer_email": "omer@example.com",
     "device_fingerprint": "test-device-001",
     "increment_by": 1,
     "app_version": "1.0.0"
@@ -253,6 +262,16 @@ Başarılı response:
 }
 ```
 
+Email eşleşmezse API şu hata kodunu döndürür:
+
+```json
+{
+  "ok": false,
+  "code": "LICENSE_EMAIL_MISMATCH",
+  "message": "Lisans e-posta adresi eşleşmiyor."
+}
+```
+
 HTTP status önerileri bu projede uygulanır:
 
 - `200`: Başarılı işlem
@@ -261,6 +280,10 @@ HTTP status önerileri bu projede uygulanır:
 - `403`: Blocked, cihaz limiti, plan pasif, günlük limit
 - `405`: Method not allowed
 - `500`: Internal server error
+
+## Client/AppData Notu
+
+EXE tarafında AppData içine lisans bilgisi yazılırken `license_key` yanında normalize edilmiş `customer_email` de saklanmalıdır. Sonraki `/api/license/check` ve `/api/usage/increment` çağrılarında ikisi birlikte gönderilmelidir. API email değerini trim + lowercase normalize eder ve `licenses.customer_email` ile eşleştirir.
 
 ## Supabase Tabloları Varsayımı
 

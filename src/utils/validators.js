@@ -1,5 +1,6 @@
 const LIMITS = {
   licenseKey: 100,
+  customerEmail: 254,
   deviceFingerprint: 300,
   deviceName: 200,
   appVersion: 50
@@ -63,6 +64,42 @@ function normalizeOptionalString(value, fieldName, maxLength) {
   };
 }
 
+function normalizeEmailValue(value) {
+  return typeof value === "string" ? value.trim().toLowerCase() : "";
+}
+
+function normalizeRequiredEmail(value, fieldName, maxLength) {
+  if (typeof value !== "string") {
+    return {
+      error: `${fieldName} zorunludur.`
+    };
+  }
+
+  const normalized = normalizeEmailValue(value);
+
+  if (!normalized) {
+    return {
+      error: `${fieldName} bos olamaz.`
+    };
+  }
+
+  if (normalized.length > maxLength) {
+    return {
+      error: `${fieldName} en fazla ${maxLength} karakter olabilir.`
+    };
+  }
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
+    return {
+      error: `${fieldName} gecerli bir e-posta adresi olmalidir.`
+    };
+  }
+
+  return {
+    value: normalized
+  };
+}
+
 function validateBaseLicensePayload(body) {
   if (!body || typeof body !== "object" || Array.isArray(body)) {
     return {
@@ -82,6 +119,19 @@ function validateBaseLicensePayload(body) {
     return {
       isValid: false,
       message: licenseKey.error
+    };
+  }
+
+  const customerEmail = normalizeRequiredEmail(
+    body.customer_email,
+    "customer_email",
+    LIMITS.customerEmail
+  );
+
+  if (customerEmail.error) {
+    return {
+      isValid: false,
+      message: customerEmail.error
     };
   }
 
@@ -120,6 +170,7 @@ function validateBaseLicensePayload(body) {
     isValid: true,
     data: {
       licenseKey: licenseKey.value,
+      customerEmail: customerEmail.value,
       deviceFingerprint: deviceFingerprint.value,
       deviceName: deviceName.value,
       appVersion: appVersion.value
@@ -173,6 +224,7 @@ function validateUsageIncrementRequest(body) {
 }
 
 module.exports = {
+  normalizeEmailValue,
   validateLicenseRequest,
   validateUsageIncrementRequest
 };

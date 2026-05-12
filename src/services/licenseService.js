@@ -4,7 +4,7 @@ const usageRepository = require("../repositories/usageRepository");
 const { writeLicenseLog } = require("../repositories/logRepository");
 const { successResponse, errorResponse } = require("../utils/apiResponse");
 const { getNowISOString, getTodayDateString, isExpiredDate } = require("../utils/date");
-const { validateLicenseRequest } = require("../utils/validators");
+const { normalizeEmailValue, validateLicenseRequest } = require("../utils/validators");
 
 function buildLogContext(data, license = null) {
   return {
@@ -13,6 +13,10 @@ function buildLogContext(data, license = null) {
     deviceFingerprint: data ? data.deviceFingerprint : null,
     deviceName: data ? data.deviceName : null
   };
+}
+
+function getNormalizedLicenseEmail(license) {
+  return normalizeEmailValue(license ? license.customer_email : "");
 }
 
 function normalizePositiveInteger(value) {
@@ -30,10 +34,11 @@ function buildUsagePayload(plan, usageDate, usedToday) {
   };
 }
 
-function buildSuccessPayload({ license, plan, device, usageDate, usedToday }) {
+function buildSuccessPayload({ license, plan, device, usageDate, usedToday, customerEmail }) {
   return {
     license: {
       license_key: license.license_key,
+      customer_email: customerEmail || getNormalizedLicenseEmail(license),
       status: license.status,
       expires_at: license.expires_at
     },
@@ -122,6 +127,20 @@ async function validateActiveLicenseAndPlan(data) {
     return {
       ok: false,
       response: errorResponse("LICENSE_NOT_FOUND", message, 401)
+    };
+  }
+
+  const licenseCustomerEmail = getNormalizedLicenseEmail(license);
+
+  if (!licenseCustomerEmail || licenseCustomerEmail !== data.customerEmail) {
+    const message = "Lisans e-posta adresi eşleşmiyor.";
+    await logEvent(data, license, "LICENSE_EMAIL_MISMATCH", message, {
+      requested_customer_email: data.customerEmail
+    });
+
+    return {
+      ok: false,
+      response: errorResponse("LICENSE_EMAIL_MISMATCH", message, 401)
     };
   }
 
@@ -269,6 +288,7 @@ async function runLicenseValidation(body, options) {
 
     await logEvent(data, updatedLicense, options.successLogType, options.successMessage, {
       app_version: data.appVersion,
+      customer_email: data.customerEmail,
       registered_new_device: activeDevice.registeredNewDevice
     });
 
@@ -280,7 +300,8 @@ async function runLicenseValidation(body, options) {
         plan,
         device: activeDevice.device,
         usageDate,
-        usedToday
+        usedToday,
+        customerEmail: data.customerEmail
       })
     );
   } catch (error) {
